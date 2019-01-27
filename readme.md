@@ -10,7 +10,7 @@ For some features, you will need to configure a web server (or two)
 with a directory containing your music library, and another
 where album art will be placed.
 
-Change the settings in `settings.json` to match your setup and requirements.
+Copy the settings from `settings.json.default` to `settings.json` and edit `settings.json` to match your setup and requirements.
 
 Launch the bot from `main.py`.
 
@@ -28,6 +28,8 @@ The MPD server host address.
 #### Port
 The MPD server port number.
 
+#### Password
+The MPD server password (if required).
 
 #### Timeout
 The server connection timeout. In most cases you won't need to ever touch this.
@@ -36,6 +38,12 @@ In some rare circumstances, increasing this may help connection issues.
 #### FIFO
 The full path to MPD's FIFO file. This is required to stream audio through discord.
 You must configure MPD itself to output to a FIFO file.
+
+#### Show art
+Searches for album art and shows them in chat. (default: `false`)
+
+#### Show download link
+Shows a download link besides the song. (default: `false`)
 
 #### Art Grabber
 ##### Save Directory

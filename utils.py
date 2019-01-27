@@ -31,15 +31,18 @@ def get_track_download(song):
 
 def get_song_embed(song, additional=None):
     embed = discord.Embed(color=0xff0ff, title=song['title'],
-                          description=song['album'] + " - " + song['artist'])
+                          description=(song['album'] if hasattr(song, 'album') else 'No album') + " - " + song['artist'])
 
-    embed.set_thumbnail(url=get_album_art_url(song))
+    if (settings['mpd']['show_art']):
+        embed.set_thumbnail(url=get_album_art_url(song))
+    # TODO: static image if we don't download art?
 
     if additional:
         embed.description += '\n**%s**' % additional
 
-    download_link = get_track_download(song)
-    embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
+    if (settings['mpd']['show_download']):
+        download_link = get_track_download(song)
+        embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
 
     return embed
 
@@ -49,7 +52,7 @@ def get_results_embed(results, title: str='Search Results', empty: str='No resul
 
     message = ''.join('%s: **%s** - **%s** by **%s**. (%s)\n'
                       % (alphabet[results.index(song)],
-                         song['title'], song['album'], song['artist'],
+                         song['title'], (song['album'] if hasattr(song, 'album') else 'No album'), song['artist'],
                          timedelta(seconds=round(float(song['time']))))
                       for song in results) if len(results) > 0 else empty
 
@@ -71,4 +74,4 @@ def create_player(voice):
                      '-ac 2 ' \
                      '-acodec pcm_s16le'
 
-    return voice.create_ffmpeg_player('/tmp/mpd.fifo', before_options=ffmpeg_options)
+    return voice.create_ffmpeg_player(settings['mpd']['fifo'], before_options=ffmpeg_options)
