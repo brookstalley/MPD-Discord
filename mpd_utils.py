@@ -29,10 +29,7 @@ def close_mpd_connection():
 
 
 def get_current_song():
-    song = mpd_connection.currentsong()
-    if (hasattr(song, 'album')) == False:
-        song['album'] = 'No album'
-    return song
+    return mpd_connection.currentsong()
 
 
 def get_current_playlist():
