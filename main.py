@@ -3,13 +3,14 @@ import json
 from typing import Union
 
 import discord
-from discord.voice_client import StreamPlayer
+#from discord.voice_client import StreamPlayer
+from discord import FFmpegPCMAudio
 
 import commands as bot_commands
 import constants
 
 client = discord.Client()
-player: StreamPlayer = None
+player: FFmpegPCMAudio = None
 voice = None
 
 commands = {}
@@ -112,9 +113,10 @@ async def on_message(message):
             mpd_utils.establish_mpd_connection()  # Establish connection to MPD if we do not have one
 
             return_message, extras, post_action = command.run(message, arguments)
-            msg = await client.send_message(message.channel,
-                                            content=return_message['message'] if 'message' in return_message else None,
-                                            embed=return_message['embed'] if 'embed' in return_message else None)
+            msg = await message.channel.send(
+                content=return_message['message'] if 'message' in return_message else None,
+                embed=return_message['embed'] if 'embed' in return_message else None
+            )
 
             if extras:
                 for key in extras:
@@ -134,19 +136,25 @@ async def wait_for_reactions(message, data, post_action):
     emoji_alphabet = [i for i in range(constants.UNICODE_A_VALUE, constants.UNICODE_Z_VALUE)]
 
     async for letter in get_reactions(len(data), emoji_alphabet):
-        await client.add_reaction(message, chr(letter))
+        await message.add_reaction(chr(letter))
 
     valid = False
     while not valid:
-        res = await client.wait_for_reaction(message=message)
-        if res.user != message.author:
-            react_emoji = res.reaction.emoji
+        #res = await client.wait_for_reaction(message=message)
+        def _cr(reaction, user):
+            return reaction.message.id == message.id
+        tres = await client.wait_for('reaction_add', check=_cr)
+        res = tres[0]
+        user = tres[1]
+        print(f"got reaction: {tres}")
+        if user != message.author:
+            react_emoji = res.emoji
             emoji_value = ord(react_emoji)
 
             if emoji_value in emoji_alphabet:
                 try:
                     song = data[emoji_alphabet.index(emoji_value)]
-                    await client.delete_message(message)
+                    await message.delete()
 
                     import utils
 
@@ -155,27 +163,29 @@ async def wait_for_reactions(message, data, post_action):
 
                     valid = True
                 except ValueError:
-                    await client.remove_reaction(message, react_emoji, res.user)
+                    await message.remove_reaction(react_emoji, user)
             else:
-                await client.remove_reaction(message, react_emoji, res.user)
+                await message.remove_reaction(react_emoji, user)
 
 
 async def join_voice(message, data, post_action):
-    if client.is_voice_connected(message.server):
+    #if client.is_voice_connected(message.server):
+    print(f"checking join_voice: {message}, {data}, {post_action}")
+    if message.guild in [x.guild for x in client.voice_clients]:
         await client.edit_message(message, "Already in voice.")
         return
 
     global player
     global voice
 
-    voice = await client.join_voice_channel(data)
+    voice = await data.connect()
 
     import mpd_utils
     mpd_utils.streaming = True
 
     import utils
     player = utils.create_player(voice)
-    player.start()
+    voice.play(player)
     mpd_utils.start_playback()
 
     await client.edit_message(message, message.content.replace("Joining", "Joined").replace("...", "."))

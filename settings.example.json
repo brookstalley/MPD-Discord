@@ -1,11 +1,12 @@
 {
-  "token": "",
+  "token": "REPLACEME",
   "prefix": "+",
   "mpd": {
     "server": "localhost",
     "port": 6600,
+    "password": "REPLACEME",
     "timeout": 10,
-    "fifo": "/var/mpd.fifo",
+    "fifo": "/SOMEWHERE/.mpd/fifo_output",
     "art_grabber": {
       "save_dir": "",
       "library_dir": ""

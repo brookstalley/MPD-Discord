@@ -15,6 +15,7 @@ def establish_mpd_connection():
 
     mpd_settings = settings['mpd']
     mpd_connection = PersistentMPDClient(host=mpd_settings['server'], port=mpd_settings['port'])
+    mpd_connection.password(mpd_settings['password'])
 
     mpd_connection.timeout = mpd_settings['timeout']
     mpd_connection.do_connect()
@@ -78,6 +79,7 @@ def generate_query(query):
     for word in query:
         if any(t in word for t in QUERY_TYPES):
             key = word.split(':')[0]
+            print(f"word is {word}")
             word = word.split(':')[1]
 
         if key in query_dict:

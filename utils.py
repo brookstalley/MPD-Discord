@@ -8,6 +8,7 @@ settings = main.settings
 
 
 def get_album_art_url(song):
+    return ""
     import mpd_album_art
 
     grabber_settings = settings['mpd']['art_grabber']
@@ -33,13 +34,13 @@ def get_song_embed(song, additional=None):
     embed = discord.Embed(color=0xff0ff, title=song['title'],
                           description=song['album'] + " - " + song['artist'])
 
-    embed.set_thumbnail(url=get_album_art_url(song))
+    #embed.set_thumbnail(url=get_album_art_url(song))
 
     if additional:
         embed.description += '\n**%s**' % additional
 
-    download_link = get_track_download(song)
-    embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
+    #download_link = get_track_download(song)
+    #embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
 
     return embed
 
@@ -60,7 +61,7 @@ def get_results_embed(results, title: str='Search Results', empty: str='No resul
 
 async def send_song_embed(client, message, song, additional=None):
     embed = get_song_embed(song, additional)
-    await client.send_message(message.channel, embed=embed)
+    await message.channel.send("Song details:", embed=embed)
 
 
 def create_player(voice):
@@ -71,4 +72,6 @@ def create_player(voice):
                      '-ac 2 ' \
                      '-acodec pcm_s16le'
 
-    return voice.create_ffmpeg_player('/tmp/mpd.fifo', before_options=ffmpeg_options)
+    return discord.FFmpegPCMAudio('/home/robo/.mpd/fifo_output', before_options=ffmpeg_options)
+
+    #return voice.create_ffmpeg_player('/tmp/mpd.fifo', before_options=ffmpeg_options)
