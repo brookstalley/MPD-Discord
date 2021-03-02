@@ -172,7 +172,7 @@ async def join_voice(message, data, post_action):
     #if client.is_voice_connected(message.server):
     print(f"checking join_voice: {message}, {data}, {post_action}")
     if message.guild in [x.guild for x in client.voice_clients]:
-        await client.edit_message(message, "Already in voice.")
+        await message.edit("Already in voice.")
         return
 
     global player
@@ -188,7 +188,7 @@ async def join_voice(message, data, post_action):
     voice.play(player)
     mpd_utils.start_playback()
 
-    await client.edit_message(message, message.content.replace("Joining", "Joined").replace("...", "."))
+    await message.edit(content=message.content.replace("Joining", "Joined").replace("...", "."))
 
 
 async def toggle_playback(message, data, post_action):
@@ -211,7 +211,7 @@ async def toggle_playback(message, data, post_action):
         msg = "Playback cannot be toggled if I am not connected."
         mpd_utils.pause_playback()  # Pause playback just to make sure.
 
-    await client.edit_message(message, msg)
+    await message.edit(msg)
 
 
 async def leave_voice(message, data, post_action):
@@ -222,7 +222,7 @@ async def leave_voice(message, data, post_action):
 
 
 @client.event
-async def on_voice_state_update(before, after):
+async def on_voice_state_update(member, before, after):
     event_channel = before.voice.voice_channel
     if not any(vc.channel == event_channel for vc in client.voice_clients):
         return

@@ -50,7 +50,7 @@ def join(msg, args):
 
 
 def pause(msg, args):
-    connected_channel = msg.author.voice.voice_channel
+    connected_channel = msg.author.voice.channel
 
     action = None
     if connected_channel:
