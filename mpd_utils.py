@@ -14,8 +14,8 @@ def establish_mpd_connection():
     settings = main.get_settings()
 
     mpd_settings = settings['mpd']
-    mpd_connection = PersistentMPDClient(host=mpd_settings['server'], port=mpd_settings['port'])
-    mpd_connection.password(mpd_settings['password'])
+    mpd_connection = PersistentMPDClient(host=mpd_settings['server'], port=mpd_settings['port'],
+                                         password=mpd_settings['password'])
 
     mpd_connection.timeout = mpd_settings['timeout']
     mpd_connection.do_connect()
@@ -52,6 +52,10 @@ def start_playback():
 
 def pause_playback():
     mpd_connection.pause(1)
+
+
+def next_track():
+    mpd_connection.next()
 
 
 def is_paused():

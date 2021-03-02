@@ -32,25 +32,27 @@ def get_track_download(song):
 
 def get_song_embed(song, additional=None):
     embed = discord.Embed(color=0xff0ff, title=song['title'],
-                          description=song['album'] + " - " + song['artist'])
+                          description=(song['artist'] + (' (' + song.get('album', 'No album') + ')')))
 
-    #embed.set_thumbnail(url=get_album_art_url(song))
+    if (settings['mpd']['show_art']):
+        embed.set_thumbnail(url=get_album_art_url(song))
+    # TODO: static image if we don't download art?
 
     if additional:
         embed.description += '\n**%s**' % additional
 
-    #download_link = get_track_download(song)
-    #embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
+    if (settings['mpd']['show_download']):
+        download_link = get_track_download(song)
+        embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
 
     return embed
-
 
 def get_results_embed(results, title: str='Search Results', empty: str='No results.'):
     alphabet = [chr(i) for i in range(constants.UPPER_A_VALUE, constants.UPPER_Z_VALUE)]
 
-    message = ''.join('%s: **%s** - **%s** by **%s**. (%s)\n'
+    message = ''.join('%s: **%s** by **%s**%s (%s)\n'
                       % (alphabet[results.index(song)],
-                         song['title'], song['album'], song['artist'],
+                         song['title'], song['artist'], (' (' + song.get('album', 'No album') + ')'),
                          timedelta(seconds=round(float(song['time']))))
                       for song in results) if len(results) > 0 else empty
 
@@ -72,6 +74,4 @@ def create_player(voice):
                      '-ac 2 ' \
                      '-acodec pcm_s16le'
 
-    return discord.FFmpegPCMAudio('/home/robo/.mpd/fifo_output', before_options=ffmpeg_options)
-
-    #return voice.create_ffmpeg_player('/tmp/mpd.fifo', before_options=ffmpeg_options)
+    return discord.FFmpegPCMAudio(settings['mpd']['fifo'], before_options=ffmpeg_options)

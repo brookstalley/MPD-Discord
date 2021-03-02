@@ -62,6 +62,17 @@ def pause(msg, args):
     return {"message": message}, action, None
 
 
+def next(msg, args):
+    mpd_utils.next_track()
+    song = mpd_utils.get_current_song()
+    if len(song) == 0:
+        embed = discord.Embed(title="Nothing playing.", color=0xff4444)
+        return {'embed': embed}, None, None
+
+    import utils
+    return {'embed': utils.get_song_embed(song)}, None, None
+
+
 def leave(msg, args):
     connected_channel = msg.author.voice.voice_channel
 

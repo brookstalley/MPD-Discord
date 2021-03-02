@@ -1,13 +1,15 @@
 import mpd
+from mpd import MPDClient, MPDError, CommandError
 import socket
 
 
 class PersistentMPDClient(mpd.MPDClient):
-    def __init__(self, socket=None, host=None, port=None):
+    def __init__(self, socket=None, host=None, port=None, password=None):
         super(PersistentMPDClient, self).__init__()
         self.socket = socket
         self.host = host
         self.port = port
+        self._password = password
 
         self.do_connect()
         # get list of available commands from client
@@ -83,3 +85,18 @@ class PersistentMPDClient(mpd.MPDClient):
         except socket.error as e:
             print("Connection refused.")
 #            print(e)
+        if self._password:
+            try:
+                self.password(self._password)
+
+            # Catch errors with the password command (e.g., wrong password)
+            except CommandError as e:
+                print("Could not connect to '%s': "
+                                  "password commmand failed: %s" %
+                                  (self.host, e))
+
+            # Catch all other possible errors
+            except (MPDError, IOError) as e:
+                print("Could not connect to '%s': "
+                                  "error with password command: %s" %
+                                  (self.host, e))

@@ -4,9 +4,11 @@
   "mpd": {
     "server": "localhost",
     "port": 6600,
-    "password": "REPLACEME",
+    "password": "",
     "timeout": 10,
-    "fifo": "/SOMEWHERE/.mpd/fifo_output",
+    "fifo": "/var/mpd.fifo",
+    "show_art": false,
+    "show_download": false,
     "art_grabber": {
       "save_dir": "",
       "library_dir": ""
@@ -44,6 +46,10 @@
     "pause": {
       "aliases": ["play", "toggle", "p"],
       "description": "Pauses the player."
+    },
+    "next": {
+      "aliases": ["n"],
+      "description": "Skips the current track."
     },
     "leave": {
       "aliases": ["disconnect"],
