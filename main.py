@@ -172,7 +172,7 @@ async def join_voice(message, data, post_action):
     #if client.is_voice_connected(message.server):
     print(f"checking join_voice: {message}, {data}, {post_action}")
     if message.guild in [x.guild for x in client.voice_clients]:
-        await message.edit("Already in voice.")
+        await message.edit(content="Already in voice.")
         return
 
     global player
