@@ -9,7 +9,11 @@ from discord import FFmpegPCMAudio
 import commands as bot_commands
 import constants
 
-client = discord.Client()
+intent = discord.Intents.default()
+intent.members = True
+intent.message_content = True
+
+client = discord.Client(intents = intent)
 player: FFmpegPCMAudio = None
 voice = None
 
