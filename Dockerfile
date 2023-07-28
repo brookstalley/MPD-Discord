@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# This Dockerfile is used to build the docker image for Discodon.
+# This Dockerfile is used to build the docker image for mpd-discord.
 #
 
 # install depencencies and compile (this is a multi-stage build)
