@@ -1,0 +1,16 @@
+---
+version: '3.4'
+services:
+  mpd-discord:
+    image: pace23pace/mpd-discord:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: mpd-discord
+    environment:
+    - TZ=UTC
+    restart: unless-stopped
+    volumes:
+      - ./settings.json:/app/settings.json
+    labels:
+    - "com.centurylinklabs.watchtower.enable=true"
