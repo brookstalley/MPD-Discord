@@ -1,32 +1,67 @@
-from PersistantMPDClient import PersistentMPDClient
+from mopidy_asyncio_client import MopidyClient
+import logging, asyncio
 
-mpd_connection = None
+mopidy:MopidyClient = None
 
-streaming: bool = False
+logging.basicConfig()
+logging.getLogger('mopidy_asyncio_client').setLevel(logging.DEBUG)
 
-
-def establish_mpd_connection():
-    global mpd_connection
-    if mpd_connection:
-        return
-
-    import main
-    settings = main.get_settings()
-
-    mpd_settings = settings['mpd']
-    mpd_connection = PersistentMPDClient(host=mpd_settings['server'], port=mpd_settings['port'],
-                                         password=mpd_settings['password'])
-
-    mpd_connection.timeout = mpd_settings['timeout']
-    mpd_connection.do_connect()
+async def playback_started_handler(data):
+    """Callback function, called when the playback started."""
+    print(data)
 
 
-def close_mpd_connection():
-    global mpd_connection
-    mpd_connection.close()
-    mpd_connection.disconnect()
-    mpd_connection = None
+async def all_events_handler(event, data):
+    """Callback function; catch-all function."""
+    print(event, data)
 
+
+async def main_context_manager(host, port):
+
+    async with MopidyClient(host='some_ip') as mopidy:
+
+        mopidy.bind('track_playback_started', playback_started_handler)
+        mopidy.bind('*', all_events_handler)
+
+        # Your program's logic:
+        await mopidy.playback.play()
+        while True:
+            await asyncio.sleep(1)
+
+
+async def main_plain(host, port):
+    global mopidy
+
+    mopidy = MopidyClient(host=host, port=port)
+    await mopidy.connect()
+
+    mopidy.bind('track_playback_started', playback_started_handler)
+    mopidy.bind('*', all_events_handler)
+
+    # Your program's logic:
+    await mopidy.playback.play()
+    while True:
+        await asyncio.sleep(1)
+
+    await mopidy.disconnect()  # close connection implicit
+
+async def mopidy_connect(host, port):
+    mopidy = await MopidyClient(host=host, port=port).connect()
+
+    mopidy.bind('track_playback_started', playback_started_handler)
+    mopidy.bind('*', all_events_handler)
+
+async def all_events_handler(event, data):
+    """Callback function; catch-all function."""
+    print(event, data)
+
+async def establish_mopidy_connecion():
+    mopidy = await MopidyClient().connect()
+    mopidy.bind('*', all_events_handler)
+
+#####################################
+### OLD STUFF BELOW
+#####################################
 
 def get_current_song():
     return mpd_connection.currentsong()
@@ -95,7 +130,7 @@ def generate_query(query):
 
 
 def perform_search(query):
-    results = mpd_connection.search(*(entry for entry in generate_query(query)))
+    results = mopidy.search(*(entry for entry in generate_query(query)))
 
     SEARCH_RESULTS = 20  # TODO Include in query
     if len(results) > SEARCH_RESULTS:

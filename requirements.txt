@@ -1,5 +1,5 @@
 requests
 discord
-python-mpd2
 pynacl
 pylast
+mopidy-asyncio-client

@@ -5,6 +5,7 @@ from typing import Union
 import discord
 #from discord.voice_client import StreamPlayer
 from discord import FFmpegPCMAudio
+from mpd_utils import main_plain,main_context_manager
 
 import commands as bot_commands
 import constants
@@ -13,7 +14,10 @@ intent = discord.Intents.default()
 intent.members = True
 intent.message_content = True
 
-client = discord.Client(intents = intent)
+client = discord.Client(intents = intent)      
+
+PREFIX:str = '!'
+
 player: FFmpegPCMAudio = None
 voice = None
 
@@ -41,7 +45,7 @@ class Command:
         self._aliases = command_aliases
         self._description = description
 
-        if command != 'help':
+        if name != 'help':
             self._function = getattr(bot_commands, self.get_name())
         else:
             self._function = generate_help
@@ -71,16 +75,6 @@ def register_command(command: Command):
 
     for alias in command.get_aliases():
         aliases[alias] = command.get_name()
-
-
-with open('settings.json', 'r') as f:
-    settings = json.loads(f.read())
-    TOKEN = settings['token']
-    PREFIX = settings['prefix']
-
-    for command in settings['commands']:
-        c = settings['commands'][command]
-        register_command(Command(command, c['aliases'], c['description']))
 
 
 def get_settings():
@@ -114,7 +108,7 @@ async def on_message(message):
 
         if command:
             import mpd_utils
-            mpd_utils.establish_mpd_connection()  # Establish connection to MPD if we do not have one
+            #mpd_utils.establish_mpd_connection()  # Establish connection to MPD if we do not have one
 
             return_message, extras, post_action = command.run(message, arguments)
             msg = await message.channel.send(
@@ -239,6 +233,25 @@ async def on_voice_state_update(member, before, after):
         if len(event_channel.voice_members) == 1:
             await voice.disconnect()
 
+async def main_loop():
+    global PREFIX
+    with open('settings.json', 'r') as f:
+        settings = json.loads(f.read())
+        TOKEN = settings['token']
+        PREFIX = settings['prefix']
+        mopidy_host:str = settings['mopidy']['server']
+        mopidy_port:str = str(settings['mopidy']['port'])
+        mopidy_password:str = settings['mopidy']['password']
+
+        for command in settings['commands']:
+            c = settings['commands'][command]
+            register_command(Command(command, c['aliases'], c['description']))
+
+      
+
+    async with client:
+        client.loop.create_task(main_plain(mopidy_host, mopidy_port))
+        await client.start(TOKEN)
 
 if __name__ == '__main__':
-    client.run(TOKEN)
+    asyncio.run(main_loop())
