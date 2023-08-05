@@ -1,5 +1,6 @@
 from mopidy_asyncio_client import MopidyClient
 import logging, asyncio
+from utils import get_song_embed
 
 mopidy:MopidyClient = None
 call_message_handler:callable = None
@@ -7,12 +8,48 @@ call_message_handler:callable = None
 logging.basicConfig()
 logging.getLogger('mopidy_asyncio_client').setLevel(logging.DEBUG)
 
+async def track_started_handler(data):
+    track:mopidy.models.Track = data['tl_track'].track
+    embed = get_song_embed(track,title_prefix='Now playing: ')
+
+    if call_message_handler:
+        await call_message_handler(embed)
+
+async def track_resumed_handler(data):
+    track:mopidy.models.Track = data['tl_track'].track
+    embed = get_song_embed(track,title_prefix='Resuming: ')
+
+    if call_message_handler:
+        await call_message_handler(embed)        
+
+async def track_paused_handler(data):
+    # Just eat this event
+    pass  
+
+async def track_ended_handler(data):
+    # Just eat this event
+    pass        
+
+async def volume_changed_handler(data):
+    # Just eat this event
+    pass
+
+async def playback_state_changed_handler(data):
+    old_state = data['old_state']
+    new_state = data['new_state']
+    if old_state != new_state:
+        message = f"Playback state changed: {old_state} -> {new_state}"
+        await call_message_handler(message)
+
 async def all_events_handler(event, data):
     """Callback function; catch-all function."""
+    if event in ['track_playback_started', 'track_playback_paused', 'track_playback_resumed', 'track_playback_ended', 'volume_changed', 'playback_state_changed']:
+        return  
+    
     print(event, data)
-    title = event
+    message = f"Event: {event} -> {data}"
     if call_message_handler:
-        await call_message_handler(title, data)
+        await call_message_handler(message)
 
 async def main_plain(host, port, message_handler:callable):
     global mopidy,call_message_handler
@@ -21,7 +58,13 @@ async def main_plain(host, port, message_handler:callable):
     mopidy = MopidyClient(host=host, port=port, parse_results=True)
     await mopidy.connect()
 
-    #mopidy.bind('track_playback_started', playback_started_handler)
+    mopidy.bind('track_playback_started', track_started_handler)
+    mopidy.bind('track_playback_paused', track_paused_handler)
+    mopidy.bind('track_playback_resumed', track_resumed_handler)
+    mopidy.bind('track_playback_ended', track_ended_handler)
+    mopidy.bind('volume_changed', volume_changed_handler)
+    mopidy.bind('playback_state_changed', playback_state_changed_handler)
+
     mopidy.bind('*', all_events_handler)
 
     await mopidy.playback.play()
@@ -35,6 +78,16 @@ async def get_current_song():
 
 async def next_track():
     return await mopidy.playback.next()
+
+async def start_playback():
+    current_state = await mopidy.playback.get_state()
+
+    await mopidy.playback.play()
+    return None, None, None
+
+async def pause_playback():
+    await mopidy.playback.pause()
+    return None, None, None
 
 #####################################
 ### OLD STUFF BELOW
@@ -76,18 +129,7 @@ def toggle_playback(pause: bool):
     mpd_connection.pause(1 if pause else 0)
 
 
-def start_playback():
-    current_state = mpd_connection.status()['state']
 
-    if current_state == 'pause':
-        mpd_connection.pause(0)
-    elif current_state == 'stop':
-        if len(mpd_connection.playlist()) > 0:
-            mpd_connection.play(0)
-
-
-def pause_playback():
-    mpd_connection.pause(1)
 
 def is_paused():
     return mpd_connection.status()['state'] != 'play'

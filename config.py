@@ -44,21 +44,17 @@ class Common(object):
             "aliases": ["current_playlist", "queue", "cp"],
             "description": "Displays the songs in the current queue."
         },
-        "join": {
-            "aliases": ["voice", "connect"],
-            "description": "Joins the voice channel of the user who executed the command."
-        },
         "pause": {
             "aliases": ["play", "toggle", "p"],
             "description": "Pauses the player."
         },
+        "play": {
+            "aliases": ["start_playing"],
+            "description": "Starts playing"
+        },
         "next": {
             "aliases": ["n"],
             "description": "Skips the current track."
-        },
-        "leave": {
-            "aliases": ["disconnect"],
-            "description": "Disconnects from the current voice channel."
         }
     }
 

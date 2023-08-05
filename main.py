@@ -1,8 +1,7 @@
 import asyncio
 
 import discord
-#from discord.voice_client import StreamPlayer
-from discord import FFmpegPCMAudio
+
 from mpd_utils import main_plain
 
 from command import Command
@@ -18,17 +17,12 @@ intent.message_content = True
 
 client = discord.Client(intents = intent)      
 
-player: FFmpegPCMAudio = None
-voice = None
-
-
 @client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
-
 
 @client.event
 async def on_message(message):
@@ -39,7 +33,6 @@ async def on_message(message):
 
         if command:
             import mpd_utils
-            #mpd_utils.establish_mpd_connection()  # Establish connection to MPD if we do not have one
 
             return_message, extras, post_action = await command.run(message, arguments)
 
@@ -99,76 +92,16 @@ async def wait_for_reactions(message, data, post_action):
                 await message.remove_reaction(react_emoji, user)
 
 
-async def join_voice(message, data, post_action):
-    #if client.is_voice_connected(message.server):
-    print(f"checking join_voice: {message}, {data}, {post_action}")
-    if message.guild in [x.guild for x in client.voice_clients]:
-        await message.edit(content="Already in voice.")
-        return
-
-    global player
-    global voice
-
-    voice = await data.connect()
-
-    import mpd_utils
-    mpd_utils.streaming = True
-
-    import utils
-    player = utils.create_player(voice)
-    voice.play(player)
-    mpd_utils.start_playback()
-
-    await message.edit(content=message.content.replace("Joining", "Joined").replace("...", "."))
-
-
-async def toggle_playback(message, data, post_action):
-    global player
-    global voice
-
-    import mpd_utils
-
-    if client.is_voice_connected(message.server):
-        current_playlist = mpd_utils.get_current_playlist()
-        if current_playlist:
-            is_paused = mpd_utils.is_paused()
-
-            mpd_utils.toggle_playback(not is_paused)
-
-            msg = "Unpaused." if is_paused else "Paused."
-        else:
-            msg = "You cannot do that with an empty playlist."
-    else:
-        msg = "Playback cannot be toggled if I am not connected."
-        mpd_utils.pause_playback()  # Pause playback just to make sure.
-
-    await message.edit(msg)
-
-
-async def leave_voice(message, data, post_action):
-    global voice
-    if voice:
-        await voice.disconnect()
-        await client.delete_message(message)
-
-
-@client.event
-async def on_voice_state_update(member, before, after):
-    event_channel = before.voice.voice_channel
-    if not any(vc.channel == event_channel for vc in client.voice_clients):
-        return
-
-    if len(event_channel.voice_members) == 1:
-        # Wait in case somebody rejoins
-        await asyncio.sleep(10)
-
-        # If still empty, disconnect.
-        if len(event_channel.voice_members) == 1:
-            await voice.disconnect()
-
-async def send_update(title, message):
+async def send_update(message):
+    print(client.status)
     channel = discord.utils.get(client.get_all_channels(), name=config.DISCORD_CHANNEL)
-    await channel.send(f"**{title}**\n{message}")
+    if channel is None:
+        print(f'Could not find channel {config.DISCORD_CHANNEL}')
+        return
+    if isinstance(message, discord.embeds.Embed):
+        message_id = await channel.send(embed=message)
+    else:
+        message_id = await channel.send(content=message)    
 
 async def main_loop():
     mopidy_host:str = config.mopidy['server']
@@ -186,7 +119,7 @@ async def main_loop():
 
     async with client:
         client.loop.create_task(main_plain(mopidy_host, mopidy_port, message_handler=send_update))
-        await client.start(config.DISCORD_TOKEN)
+        await client.start(config.locals['discord_token'])
 
 if __name__ == '__main__':
     asyncio.run(main_loop())

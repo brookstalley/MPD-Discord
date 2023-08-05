@@ -71,31 +71,15 @@ def playlist(msg, args):
     return {'embed': utils.get_results_embed(results, title="Current Playlist", empty="Empty.")}, None, None
 
 
-def join(msg, args):
-    connected_channel = msg.author.voice.channel
+async def pause(msg, args):
+    await mpd_utils.pause_playback()
 
-    action = None
-    if connected_channel:
-        message = "Joining **%s**..." % connected_channel.name
-        action = {'join_voice': True, 'data': connected_channel}
+    return None, None, None
 
-    else:
-        message = "You must be in a voice channel to do that."  # TODO Create decoration to handle voice channel requirement
-    return {"message": message}, action, None
+async def play(msg, args):
+    await mpd_utils.start_playback()
 
-
-def pause(msg, args):
-    connected_channel = msg.author.voice.channel
-
-    action = None
-    if connected_channel:
-        message = "Toggling playback..."
-        action = {'toggle_playback': True, 'data': mpd_utils.is_paused()}
-    else:
-        message = "You must be in a voice channel to do that."
-
-    return {"message": message}, action, None
-
+    return None, None, None
 
 async def next(msg, args):
     await mpd_utils.next_track()
@@ -103,14 +87,3 @@ async def next(msg, args):
     #return await get_playing(msg, args)
     return None, None, None
 
-def leave(msg, args):
-    connected_channel = msg.author.voice.voice_channel
-
-    action = None
-    if connected_channel:
-        message = "Leaving..."
-        action = {'leave_voice': True, 'data': None}
-    else:
-        message = "You must be in a voice channel to do that."
-
-    return {"message": message}, action, None

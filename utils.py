@@ -1,4 +1,4 @@
-import main
+#import main
 import requests
 import discord
 import constants
@@ -29,8 +29,7 @@ def get_album_art_url(song):
 def get_track_download(song):
     return settings['download_servers']['music_url'] + requests.utils.quote(song['file'])
 
-
-def get_song_embed(song:mopidy.models.Track, additional=None):
+def get_song_embed(song:mopidy.models.Track, additional=None, title_prefix = ''):
     global settings
     artists = []
     artist_line = f'Artist: {", ".join(artist.name for artist in song.artists)}'
@@ -39,7 +38,7 @@ def get_song_embed(song:mopidy.models.Track, additional=None):
     
     desc_line = f'{artist_line}\n{album_line}\n{uri_line}'
 
-    embed = discord.Embed(color=0xff0ff, title=song.name,
+    embed = discord.Embed(color=0xff0ff, title = f'{title_prefix}{song.name}',
                           description = desc_line)
 
     if config.mopidy['show_art']:
