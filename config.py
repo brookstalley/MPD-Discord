@@ -2,7 +2,7 @@ import json
 
 
 class Common(object):
-    DISCORD_TOKEN = "MTEzNDE3Nzc4NTY3NDQ4NTc2MQ.G8oWR4.h3j0ssH-VzdW91pQ1Z7ZLoM5fXRKkgLkqm64wA"
+    DISCORD_TOKEN = "[insert token]"
     COMMAND_PREFIX = "!"
     DISCORD_CHANNEL = "music-control"
     mopidy = {
