@@ -2,49 +2,44 @@ from mopidy_asyncio_client import MopidyClient
 import logging, asyncio
 
 mopidy:MopidyClient = None
+call_message_handler:callable = None
 
 logging.basicConfig()
 logging.getLogger('mopidy_asyncio_client').setLevel(logging.DEBUG)
 
-async def playback_started_handler(data):
-    """Callback function, called when the playback started."""
-    print(data)
-
-
 async def all_events_handler(event, data):
     """Callback function; catch-all function."""
     print(event, data)
+    title = event
+    if call_message_handler:
+        await call_message_handler(title, data)
 
+async def main_plain(host, port, message_handler:callable):
+    global mopidy,call_message_handler
 
-async def main_context_manager(host, port):
-
-    async with MopidyClient(host='some_ip') as mopidy:
-
-        mopidy.bind('track_playback_started', playback_started_handler)
-        mopidy.bind('*', all_events_handler)
-
-        # Your program's logic:
-        await mopidy.playback.play()
-        while True:
-            await asyncio.sleep(1)
-
-
-async def main_plain(host, port):
-    global mopidy
-
-    mopidy = MopidyClient(host=host, port=port)
+    call_message_handler = message_handler
+    mopidy = MopidyClient(host=host, port=port, parse_results=True)
     await mopidy.connect()
 
-    mopidy.bind('track_playback_started', playback_started_handler)
+    #mopidy.bind('track_playback_started', playback_started_handler)
     mopidy.bind('*', all_events_handler)
 
-    # Your program's logic:
     await mopidy.playback.play()
     while True:
         await asyncio.sleep(1)
 
     await mopidy.disconnect()  # close connection implicit
 
+async def get_current_song():
+    return await mopidy.playback.get_current_track()    
+
+async def next_track():
+    return await mopidy.playback.next()
+
+#####################################
+### OLD STUFF BELOW
+#####################################
+'''
 async def mopidy_connect(host, port):
     mopidy = await MopidyClient(host=host, port=port).connect()
 
@@ -55,16 +50,22 @@ async def all_events_handler(event, data):
     """Callback function; catch-all function."""
     print(event, data)
 
+async def main_context_manager(host, port):
+
+    async with MopidyClient(host='some_ip') as mopidy:
+
+        #mopidy.bind('track_playback_started', playback_started_handler)
+        mopidy.bind('*', all_events_handler)
+
+        # Your program's logic:
+        await mopidy.playback.play()
+        while True:
+            await asyncio.sleep(1)
+
+
 async def establish_mopidy_connecion():
     mopidy = await MopidyClient().connect()
     mopidy.bind('*', all_events_handler)
-
-#####################################
-### OLD STUFF BELOW
-#####################################
-
-def get_current_song():
-    return mpd_connection.currentsong()
 
 
 def get_current_playlist():
@@ -87,11 +88,6 @@ def start_playback():
 
 def pause_playback():
     mpd_connection.pause(1)
-
-
-def next_track():
-    mpd_connection.next()
-
 
 def is_paused():
     return mpd_connection.status()['state'] != 'play'
@@ -144,3 +140,4 @@ async def add_to_queue(client, message, song):
 
     import utils
     await utils.send_song_embed(client, message, song, additional='Added to queue.')
+'''

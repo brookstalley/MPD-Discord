@@ -1,14 +1,16 @@
 import asyncio
-import json
-from typing import Union
 
 import discord
 #from discord.voice_client import StreamPlayer
 from discord import FFmpegPCMAudio
-from mpd_utils import main_plain,main_context_manager
+from mpd_utils import main_plain
+
+from command import Command
 
 import commands as bot_commands
+
 import constants
+from config import Common as config
 
 intent = discord.Intents.default()
 intent.members = True
@@ -16,79 +18,8 @@ intent.message_content = True
 
 client = discord.Client(intents = intent)      
 
-PREFIX:str = '!'
-
 player: FFmpegPCMAudio = None
 voice = None
-
-commands = {}
-aliases = {}
-
-
-def generate_help(*args):
-    embed = discord.Embed(color=0xff000a, title='Help',
-                          description='')
-
-    for command in commands:
-        c = commands[command]
-        embed.add_field(name=c.get_name(),
-                        value=c.get_description() + "\n**Aliases:** " + ', '.join(a for a in c.get_aliases()) + "\n--")
-
-    return {'embed': embed}, None, None
-
-
-class Command:
-    # _function: Callable[Any, dict]
-
-    def __init__(self, name: str, command_aliases: list, description: str):
-        self._name = name
-        self._aliases = command_aliases
-        self._description = description
-
-        if name != 'help':
-            self._function = getattr(bot_commands, self.get_name())
-        else:
-            self._function = generate_help
-
-    def get_name(self):
-        return self._name
-
-    def get_aliases(self):
-        return self._aliases
-
-    def get_description(self):
-        return self._description
-
-    def get_help(self):
-        return "\n\n**%s** - %s\n__Aliases:__ *%s*" % (self.get_name(), self.get_description(),
-                                                       '*, *'.join(alias for alias in self.get_aliases()))
-
-    def run(self, *args) -> dict:
-        return self._function(*args)
-
-
-def register_command(command: Command):
-    if command.get_name() in commands:
-        raise ValueError("A command with this name is already registered.")
-
-    commands[command.get_name()] = command
-
-    for alias in command.get_aliases():
-        aliases[alias] = command.get_name()
-
-
-def get_settings():
-    return settings
-
-
-def get_command_by_name(name: str) -> Union[Command, None]:
-    name = name.split(' ')[0]
-    if name in commands:
-        return commands[name]
-    elif name in aliases:
-        return commands[aliases[name]]
-    else:
-        return None
 
 
 @client.event
@@ -101,20 +32,22 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.content.startswith(PREFIX):
-        command_input = message.content.split(PREFIX)[1]
-        command = get_command_by_name(command_input)
+    if message.content.startswith(config.COMMAND_PREFIX):
+        command_input = message.content.split(config.COMMAND_PREFIX)[1]
+        command = bot_commands.get_command_by_name(command_input)
         arguments = command_input.split(' ')[1:]
 
         if command:
             import mpd_utils
             #mpd_utils.establish_mpd_connection()  # Establish connection to MPD if we do not have one
 
-            return_message, extras, post_action = command.run(message, arguments)
-            msg = await message.channel.send(
-                content=return_message['message'] if 'message' in return_message else None,
-                embed=return_message['embed'] if 'embed' in return_message else None
-            )
+            return_message, extras, post_action = await command.run(message, arguments)
+
+            if return_message is not None:
+                msg = await message.channel.send(
+                    content=return_message['message'] if 'message' in return_message else None,
+                    embed=return_message['embed'] if 'embed' in return_message else None
+                )
 
             if extras:
                 for key in extras:
@@ -233,25 +166,27 @@ async def on_voice_state_update(member, before, after):
         if len(event_channel.voice_members) == 1:
             await voice.disconnect()
 
+async def send_update(title, message):
+    channel = discord.utils.get(client.get_all_channels(), name=config.DISCORD_CHANNEL)
+    await channel.send(f"**{title}**\n{message}")
+
 async def main_loop():
-    global PREFIX
-    with open('settings.json', 'r') as f:
-        settings = json.loads(f.read())
-        TOKEN = settings['token']
-        PREFIX = settings['prefix']
-        mopidy_host:str = settings['mopidy']['server']
-        mopidy_port:str = str(settings['mopidy']['port'])
-        mopidy_password:str = settings['mopidy']['password']
+    mopidy_host:str = config.mopidy['server']
+    mopidy_port:str = config.mopidy['port']
+    mopidy_password:str = config.mopidy['password']
 
-        for command in settings['commands']:
-            c = settings['commands'][command]
-            register_command(Command(command, c['aliases'], c['description']))
+    for command in config.commands:
 
-      
+        if command != 'help':
+            func = getattr(bot_commands, command)
+        else:
+            func = bot_commands.generate_help
+
+        bot_commands.register_command(Command(command, config.commands[command]['aliases'], config.commands[command]['description'], func = func))
 
     async with client:
-        client.loop.create_task(main_plain(mopidy_host, mopidy_port))
-        await client.start(TOKEN)
+        client.loop.create_task(main_plain(mopidy_host, mopidy_port, message_handler=send_update))
+        await client.start(config.DISCORD_TOKEN)
 
 if __name__ == '__main__':
     asyncio.run(main_loop())

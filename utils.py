@@ -2,10 +2,10 @@ import main
 import requests
 import discord
 import constants
+import string
 from datetime import timedelta
-
-settings = main.settings
-
+import mopidy.models
+from config import Common as config
 
 def get_album_art_url(song):
     return ""
@@ -30,18 +30,26 @@ def get_track_download(song):
     return settings['download_servers']['music_url'] + requests.utils.quote(song['file'])
 
 
-def get_song_embed(song, additional=None):
-    embed = discord.Embed(color=0xff0ff, title=song['title'],
-                          description=(song['artist'] + (' (' + song.get('album', 'No album') + ')')))
+def get_song_embed(song:mopidy.models.Track, additional=None):
+    global settings
+    artists = []
+    artist_line = f'Artist: {", ".join(artist.name for artist in song.artists)}'
+    album_line = f'Album: {song.album.name} ({song.album.date})'
+    uri_line = f'URI: {song.uri}'
+    
+    desc_line = f'{artist_line}\n{album_line}\n{uri_line}'
 
-    if (settings['mpd']['show_art']):
+    embed = discord.Embed(color=0xff0ff, title=song.name,
+                          description = desc_line)
+
+    if config.mopidy['show_art']:
         embed.set_thumbnail(url=get_album_art_url(song))
     # TODO: static image if we don't download art?
 
     if additional:
         embed.description += '\n**%s**' % additional
 
-    if (settings['mpd']['show_download']):
+    if config.mopidy['show_download']:
         download_link = get_track_download(song)
         embed.add_field(name='Download Link', value=f'[Click Here]({download_link})')
 
