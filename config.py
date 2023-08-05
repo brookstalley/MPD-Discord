@@ -1,8 +1,8 @@
 import json
 
-
 class Common(object):
-    DISCORD_TOKEN = "[insert token]"
+    locals = json.load(open('config-local.json', 'r'))
+    
     COMMAND_PREFIX = "!"
     DISCORD_CHANNEL = "music-control"
     mopidy = {
