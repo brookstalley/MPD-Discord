@@ -10,7 +10,8 @@ logging.getLogger('mopidy_asyncio_client').setLevel(logging.DEBUG)
 
 async def track_started_handler(data):
     track:mopidy.models.Track = data['tl_track'].track
-    embed = get_song_embed(track,title_prefix='Now playing: ')
+    uri_images = await mopidy.library.get_images([track.uri])
+    embed = get_song_embed(track,title_prefix='Now playing: ', uri_images=uri_images)
 
     if call_message_handler:
         await call_message_handler(embed)
@@ -76,6 +77,8 @@ async def main_plain(host, port, message_handler:callable):
 
     mopidy.bind('*', all_events_handler)
     await mopidy.tracklist.set_consume(True)
+    await mopidy.tracklist.set_random(False)
+    await mopidy.tracklist.set_repeat(False)
     await mopidy.playback.play()
     while True:
         await asyncio.sleep(1)
@@ -105,12 +108,14 @@ async def clear_queue():
     return await mopidy.tracklist.clear()
 
 def generate_query(query):
+    renames = {'name': 'track_name', 'track': 'track_name'}
     QUERY_TYPES = [
         'artist',
         'album',
         'title',
         'track',
         'name',
+        'track_name',
         'genre',
         'date',
         'composer',
@@ -134,15 +139,16 @@ def generate_query(query):
             query_dict[key] = word
     # Update each value in the dict to be enclosed in a list
     query_dict = {k: [v] for k, v in query_dict.items()}
+    # rename convenience keys
+    query_dict = {renames.get(k, k): v for k, v in query_dict.items()}
 
-    #return [item for k in query_dict for item in (k, query_dict[k])]
     return query_dict
 
 async def perform_search(query):
     mopidy_query = generate_query(query)
     results = await mopidy.library.search(mopidy_query)
 
-    SEARCH_RESULTS = 20  # TODO Include in query
+    SEARCH_RESULTS = 25  # TODO Include in query
     # Always the 0th result because we only submit one query at a time
     # TODO: support albums and artists
     results = results[0].tracks
@@ -151,10 +157,15 @@ async def perform_search(query):
 
     return results
 
-async def add_to_queue(client, message, song=None):
+async def add_to_queue(client, message, song=None, uri_images = None):
     await mopidy.tracklist.add(uris=[song.uri])
+    await send_song_embed(client, message, song, additional='Added to queue.', uri_images=uri_images)
 
-    await send_song_embed(client, message, song, additional='Added to queue.')
+async def images_for_uris(uris) -> dict:
+    #support being called with a str
+    if isinstance(uris, str):
+        uris = [uris]
+    return await mopidy.library.get_images(uris)
 
 #####################################
 ### OLD STUFF BELOW

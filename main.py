@@ -1,11 +1,9 @@
 import asyncio
-
 import discord
 
-from mpd_utils import main_plain
+from mpd_utils import main_plain, images_for_uris
 
 from command import Command
-
 import commands as bot_commands
 
 import constants
@@ -58,10 +56,12 @@ async def get_reactions(num, alphabet):
 class SongSelect(discord.ui.Select):
     def __init__(self, songs, post_action, emoji_alphabet, message):
         options = []
+
         # for now assuming this is always song data
         for song in songs:
-            options.append(discord.SelectOption(label=song.name, description=f'{song.album.name}',
-                                                 value=songs.index(song), emoji=chr(emoji_alphabet[songs.index(song)])))
+            song_select = discord.SelectOption(label=song.name, description=f'{song.album.name}',
+                                                value=songs.index(song), emoji=chr(emoji_alphabet[songs.index(song)]))
+            options.append(song_select)
 
         super().__init__(placeholder="Select a song to add to the queue", options=options)
         self._songs = songs
@@ -71,7 +71,8 @@ class SongSelect(discord.ui.Select):
     async def callback(self, interaction:discord.Interaction):
         await interaction.message.delete()
         song = self._songs[int(self.values[0])]
-        await self._post_action(client, interaction.message, song)
+        uri_images = await images_for_uris([song.uri])
+        await self._post_action(client, interaction.message, song, uri_images)
         await self._message.delete()
 
 class SongView(discord.ui.View):
@@ -85,11 +86,10 @@ async def wait_for_reactions(message:discord.message.Message, data, post_action)
 
     # build a dropdown select list with all of the songs
                                                                                     
-
     selector = SongSelect(data, post_action, emoji_alphabet, message)
     view = SongView(selector)
 
-    await message.channel.send('Select a song to add to the queue', view=view)
+    await message.channel.send(view=view)
     return
 
     async for letter in get_reactions(len(data), emoji_alphabet):

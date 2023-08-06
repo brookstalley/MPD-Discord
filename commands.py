@@ -5,8 +5,8 @@ from typing import Union
 
 import mpd_utils
 from config import Common as config
-from utils import get_results_embed, send_song_embed
-from mpd_utils import get_current_song, add_to_queue
+from utils import get_results_embed, send_song_embed, get_song_embed
+from mpd_utils import get_current_song, add_to_queue, images_for_uris
 
 
 commands = {}
@@ -42,13 +42,13 @@ def generate_help(*args):
     return {'embed': embed}, None, None
 
 async def get_playing(msg, args):
-    song = await mpd_utils.get_current_song()
+    song = await get_current_song()
     if song is None:
         embed = discord.Embed(title="Nothing playing.", color=0xff4444)
         return {'embed': embed}, None, None
 
-    import utils
-    return {'embed': utils.get_song_embed(song)}, None, None
+    uri_images = await images_for_uris([song.uri])
+    return {'embed': get_song_embed(song,uri_images=uri_images)}, None, None
 
 async def search(msg, query):
     results = await mpd_utils.perform_search(query)

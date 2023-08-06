@@ -11,12 +11,7 @@ class Common(object):
         "password": "FRNKdiscodonFRNK",
         "timeout": 10,
         "fifo": "",
-        "show_art": False,
-        "show_download": False,
-        "art_grabber": {
-            "save_dir": "",
-            "library_dir": ""
-        }
+        "show_art": True,
     }
     download_servers = {
         "art_url": "",
