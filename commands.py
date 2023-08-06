@@ -30,7 +30,7 @@ def get_command_by_name(name: str) -> Union[Command, None]:
     else:
         return None        
 
-def generate_help(*args):
+async def generate_help(*args):
     embed = discord.Embed(color=0xff000a, title='Help',
                           description='')
 
