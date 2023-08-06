@@ -1,6 +1,6 @@
 from mopidy_asyncio_client import MopidyClient
 import logging, asyncio
-from utils import get_song_embed
+from utils import get_song_embed, send_song_embed
 
 mopidy:MopidyClient = None
 call_message_handler:callable = None
@@ -34,6 +34,13 @@ async def volume_changed_handler(data):
     # Just eat this event
     pass
 
+async def tracklist_changed_handler(data):
+    # If the tracklist changed and we're not playing, start playing
+    state = await mopidy.playback.get_state()
+    if state != 'playing':
+        await mopidy.playback.play()
+    pass 
+
 async def playback_state_changed_handler(data):
     old_state = data['old_state']
     new_state = data['new_state']
@@ -43,7 +50,8 @@ async def playback_state_changed_handler(data):
 
 async def all_events_handler(event, data):
     """Callback function; catch-all function."""
-    if event in ['track_playback_started', 'track_playback_paused', 'track_playback_resumed', 'track_playback_ended', 'volume_changed', 'playback_state_changed']:
+    if event in ['track_playback_started', 'track_playback_paused', 'track_playback_resumed', 'track_playback_ended',
+                  'volume_changed', 'playback_state_changed', 'tracklist_changed']:
         return  
     
     print(event, data)
@@ -64,6 +72,7 @@ async def main_plain(host, port, message_handler:callable):
     mopidy.bind('track_playback_ended', track_ended_handler)
     mopidy.bind('volume_changed', volume_changed_handler)
     mopidy.bind('playback_state_changed', playback_state_changed_handler)
+    mopidy.bind('tracklist_changed', tracklist_changed_handler)
 
     mopidy.bind('*', all_events_handler)
 
@@ -89,51 +98,11 @@ async def pause_playback():
     await mopidy.playback.pause()
     return None, None, None
 
-#####################################
-### OLD STUFF BELOW
-#####################################
-'''
-async def mopidy_connect(host, port):
-    mopidy = await MopidyClient(host=host, port=port).connect()
+async def get_queue():
+    return await mopidy.tracklist.get_tracks()
 
-    mopidy.bind('track_playback_started', playback_started_handler)
-    mopidy.bind('*', all_events_handler)
-
-async def all_events_handler(event, data):
-    """Callback function; catch-all function."""
-    print(event, data)
-
-async def main_context_manager(host, port):
-
-    async with MopidyClient(host='some_ip') as mopidy:
-
-        #mopidy.bind('track_playback_started', playback_started_handler)
-        mopidy.bind('*', all_events_handler)
-
-        # Your program's logic:
-        await mopidy.playback.play()
-        while True:
-            await asyncio.sleep(1)
-
-
-async def establish_mopidy_connecion():
-    mopidy = await MopidyClient().connect()
-    mopidy.bind('*', all_events_handler)
-
-
-def get_current_playlist():
-    return mpd_connection.playlistinfo()
-
-
-def toggle_playback(pause: bool):
-    mpd_connection.pause(1 if pause else 0)
-
-
-
-
-def is_paused():
-    return mpd_connection.status()['state'] != 'play'
-
+async def clear_queue():
+    return await mopidy.tracklist.clear()
 
 def generate_query(query):
     QUERY_TYPES = [
@@ -163,23 +132,39 @@ def generate_query(query):
             query_dict[key] += ' ' + word
         else:
             query_dict[key] = word
+    # Update each value in the dict to be enclosed in a list
+    query_dict = {k: [v] for k, v in query_dict.items()}
 
-    return [item for k in query_dict for item in (k, query_dict[k])]
+    #return [item for k in query_dict for item in (k, query_dict[k])]
+    return query_dict
 
-
-def perform_search(query):
-    results = mopidy.search(*(entry for entry in generate_query(query)))
+async def perform_search(query):
+    mopidy_query = generate_query(query)
+    results = await mopidy.library.search(mopidy_query)
 
     SEARCH_RESULTS = 20  # TODO Include in query
+    # Always the 0th result because we only submit one query at a time
+    # TODO: support albums and artists
+    results = results[0].tracks
     if len(results) > SEARCH_RESULTS:
         results = results[:SEARCH_RESULTS]
 
     return results
 
-
 async def add_to_queue(client, message, song):
-    mpd_connection.add(song['file'])
+    await mopidy.tracklist.add(uris=[song.uri])
 
-    import utils
-    await utils.send_song_embed(client, message, song, additional='Added to queue.')
+    await send_song_embed(client, message, song, additional='Added to queue.')
+
+#####################################
+### OLD STUFF BELOW
+#####################################
+'''
+def toggle_playback(pause: bool):
+    mpd_connection.pause(1 if pause else 0)
+
+def is_paused():
+    return mpd_connection.status()['state'] != 'play'
+
+
 '''

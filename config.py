@@ -40,8 +40,8 @@ class Common(object):
             "aliases": ["queue", "search_add", "add_one"],
             "description": "Searches the database for a song and adds it to the queue."
         },
-        "playlist": {
-            "aliases": ["current_playlist", "queue", "cp"],
+        "queue": {
+            "aliases": ["current_playlist", "cp"],
             "description": "Displays the songs in the current queue."
         },
         "pause": {
@@ -55,6 +55,10 @@ class Common(object):
         "next": {
             "aliases": ["n"],
             "description": "Skips the current track."
-        }
+        },
+        "clear": {
+            "aliases": ["clear_queue"],
+            "description": "Clears the current queue."
+        },
     }
 

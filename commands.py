@@ -5,6 +5,9 @@ from typing import Union
 
 import mpd_utils
 from config import Common as config
+from utils import get_results_embed, send_song_embed
+from mpd_utils import get_current_song, add_to_queue
+
 
 commands = {}
 aliases = {}
@@ -47,29 +50,22 @@ async def get_playing(msg, args):
     import utils
     return {'embed': utils.get_song_embed(song)}, None, None
 
+async def search(msg, query):
+    results = await mpd_utils.perform_search(query)
 
-def search(msg, query):
-    results = mpd_utils.perform_search(query)
+    return {'embed': get_results_embed(results)}, \
+           {'wait_for_reactions': True, 'data': results}, send_song_embed
 
-    import utils
-    return {'embed': utils.get_results_embed(results)}, \
-           {'wait_for_reactions': True, 'data': results}, utils.send_song_embed
+async def add(msg, query):
+    results = await mpd_utils.perform_search(query)
 
+    return {'embed': get_results_embed(results)}, \
+           {'wait_for_reactions': True, 'data': results}, add_to_queue
 
-def add(msg, query):
-    results = mpd_utils.perform_search(query)
+async def queue(msg, args):
+    results = await mpd_utils.get_queue()
 
-    import utils
-    return {'embed': utils.get_results_embed(results)}, \
-           {'wait_for_reactions': True, 'data': results}, mpd_utils.add_to_queue
-
-
-def playlist(msg, args):
-    results = mpd_utils.get_current_playlist()
-
-    import utils
-    return {'embed': utils.get_results_embed(results, title="Current Playlist", empty="Empty.")}, None, None
-
+    return {'embed': get_results_embed(results, title="Current Playlist", empty="Empty.")}, None, None
 
 async def pause(msg, args):
     await mpd_utils.pause_playback()
@@ -87,3 +83,7 @@ async def next(msg, args):
     #return await get_playing(msg, args)
     return None, None, None
 
+async def clear(msg, args):
+    await mpd_utils.clear_queue()
+
+    return "Cleared queue", None, None
