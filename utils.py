@@ -55,6 +55,33 @@ def get_results_embed(results, title: str='Search Results', empty: str='No resul
 
     return embed
 
+def get_queue_embeds(queue, title: str='Current Queue', empty: str='No songs in queue.', uri_images = None):
+    if len(queue) == 0:
+        return empty, None
+    if len(queue) > 10:
+        message = f'**{len(queue)} songs in queue. Showing first 10.**\n\n'
+    else:
+        message = f'**{len(queue)} songs in queue.**\n\n'
+
+    display_queue = queue[:10]
+    embedList = []
+    item: mopidy.models.Track
+    for item in display_queue:
+        embed = discord.Embed(color=0xff0000, title=item.name, description=f'Artist: {artists_to_string(item.artists)}\nAlbum: {item.album.name} ({item.album.date})')
+        if uri_images is not None:
+            image = uri_images[item.uri][0]
+            if image:
+                embed.set_thumbnail(url=image.uri)
+        embedList.append(embed)
+    return message, embedList
+
+                
+        
+
+        
+
+    
+
 async def send_song_embed(client, message, song, additional=None, uri_images=None):
     embed = get_song_embed(song=song, additional=additional, uri_images=uri_images)
     await message.channel.send("Song details:", embed=embed)

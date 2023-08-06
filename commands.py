@@ -5,7 +5,7 @@ from typing import Union
 
 import mpd_utils
 from config import Common as config
-from utils import get_results_embed, send_song_embed, get_song_embed
+from utils import get_results_embed, send_song_embed, get_song_embed, get_queue_embeds
 from mpd_utils import get_current_song, add_to_queue, images_for_uris
 
 
@@ -64,8 +64,9 @@ async def add(msg, query):
 
 async def queue(msg, args):
     results = await mpd_utils.get_queue()
-
-    return {'embed': get_results_embed(results, title="Current Playlist", empty="Empty.")}, None, None
+    uri_images = await images_for_uris([song.uri for song in results])
+    message, embeds = get_queue_embeds(results, title="Current Playlist", empty="Queue is empty", uri_images=uri_images)
+    return {'embeds': embeds, 'message': message}, None, None
 
 async def pause(msg, args):
     await mpd_utils.pause_playback()

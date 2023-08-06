@@ -39,7 +39,10 @@ async def on_message(message):
                     content=return_message['message'] if 'message' in return_message else None,
                     embed=return_message['embed'] if 'embed' in return_message else None
                 )
-
+                
+                if 'embeds' in return_message:
+                    for embed in return_message['embeds']:
+                        msg = await message.channel.send(embed=embed)
             if extras:
                 for key in extras:
                     if key != 'data' and extras[key]:
