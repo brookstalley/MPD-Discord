@@ -59,7 +59,7 @@ class SongSelect(discord.ui.Select):
 
         # for now assuming this is always song data
         for song in songs:
-            song_select = discord.SelectOption(label=song.name, description=f'{song.album.name}',
+            song_select = discord.SelectOption(label=song.name[:90], description=f'{song.album.name[:90]}',
                                                 value=songs.index(song), emoji=chr(emoji_alphabet[songs.index(song)]))
             options.append(song_select)
 

@@ -86,4 +86,4 @@ async def next(msg, args):
 async def clear(msg, args):
     await mpd_utils.clear_queue()
 
-    return "Cleared queue", None, None
+    return {'message' : "Cleared queue"}, None, None
