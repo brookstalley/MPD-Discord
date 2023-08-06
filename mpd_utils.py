@@ -27,7 +27,7 @@ async def track_paused_handler(data):
     pass  
 
 async def track_ended_handler(data):
-    # Just eat this event
+    # Remove the track from the playlist
     pass        
 
 async def volume_changed_handler(data):
@@ -75,7 +75,7 @@ async def main_plain(host, port, message_handler:callable):
     mopidy.bind('tracklist_changed', tracklist_changed_handler)
 
     mopidy.bind('*', all_events_handler)
-
+    await mopidy.tracklist.set_consume(True)
     await mopidy.playback.play()
     while True:
         await asyncio.sleep(1)
@@ -151,7 +151,7 @@ async def perform_search(query):
 
     return results
 
-async def add_to_queue(client, message, song):
+async def add_to_queue(client, message, song=None):
     await mopidy.tracklist.add(uris=[song.uri])
 
     await send_song_embed(client, message, song, additional='Added to queue.')

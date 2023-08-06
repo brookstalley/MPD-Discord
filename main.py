@@ -55,12 +55,46 @@ async def get_reactions(num, alphabet):
     for letter in alphabet[:num]:
         yield letter
 
+class SongSelect(discord.ui.Select):
+    def __init__(self, songs, post_action, emoji_alphabet, message):
+        options = []
+        # for now assuming this is always song data
+        for song in songs:
+            options.append(discord.SelectOption(label=song.name, description=f'{song.album.name}',
+                                                 value=songs.index(song), emoji=chr(emoji_alphabet[songs.index(song)])))
 
-async def wait_for_reactions(message, data, post_action):
+        super().__init__(placeholder="Select a song to add to the queue", options=options)
+        self._songs = songs
+        self._post_action = post_action
+        self._message = message
+
+    async def callback(self, interaction:discord.Interaction):
+        await interaction.message.delete()
+        song = self._songs[int(self.values[0])]
+        await self._post_action(client, interaction.message, song)
+        await self._message.delete()
+
+class SongView(discord.ui.View):
+    def __init__(self, selector, timeout = 180):
+        super().__init__(timeout=timeout)
+        self.add_item(selector)
+
+
+async def wait_for_reactions(message:discord.message.Message, data, post_action):
     emoji_alphabet = [i for i in range(constants.UNICODE_A_VALUE, constants.UNICODE_Z_VALUE)]
+
+    # build a dropdown select list with all of the songs
+                                                                                    
+
+    selector = SongSelect(data, post_action, emoji_alphabet, message)
+    view = SongView(selector)
+
+    await message.channel.send('Select a song to add to the queue', view=view)
+    return
 
     async for letter in get_reactions(len(data), emoji_alphabet):
         await message.add_reaction(chr(letter))
+
 
     valid = False
     while not valid:
