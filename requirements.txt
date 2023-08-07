@@ -1,5 +1,2 @@
-requests
-discord
-pynacl
-pylast
-mopidy-asyncio-client
+discord.py==2.3.1
+mopidy_asyncio_client==3.1.0
