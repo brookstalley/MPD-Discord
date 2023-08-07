@@ -2,5 +2,5 @@
 __pycache__/
 venv/
 .vscode/
-# .gitignore doesn't work on existing files. Instead, do "git update-index --skip-worktree config-local.json" after updating with token
+# let's not upload our token to github
 config-local.json
