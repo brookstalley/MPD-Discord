@@ -64,38 +64,6 @@ async def all_events_handler(event, data):
     if call_message_handler:
         await call_message_handler(message)
 
-async def main_plain(host, port, message_handler:callable):
-    global mopidy,call_message_handler
-
-    call_message_handler = message_handler
-    mopidy = MopidyClient(host=host, port=port, parse_results=True)
-    await mopidy.connect()
-
-    mopidy.bind('track_playback_started', track_started_handler)
-    mopidy.bind('track_playback_paused', track_paused_handler)
-    mopidy.bind('track_playback_resumed', track_resumed_handler)
-    mopidy.bind('track_playback_ended', track_ended_handler)
-    mopidy.bind('volume_changed', volume_changed_handler)
-    mopidy.bind('playback_state_changed', playback_state_changed_handler)
-    mopidy.bind('tracklist_changed', tracklist_changed_handler)
-
-    # capture everything else just to build out the model
-    mopidy.bind('*', all_events_handler)
-
-    # Set the controls the way we want
-    await mopidy.tracklist.set_consume(True)
-    await mopidy.tracklist.set_random(False)
-    await mopidy.tracklist.set_repeat(False)
-
-    # Start playing? TODO: only do this if there is music in the queue. Maybe clear it first?
-    await mopidy.playback.play()
-
-    # We'll hang here and let asyncio do its thing
-    while True:
-        await asyncio.sleep(1)
-
-    await mopidy.disconnect()  # close connection implicit
-
 async def get_current_song():
     return await mopidy.playback.get_current_track()    
 
@@ -181,3 +149,35 @@ async def images_for_uris(uris) -> dict:
 
 async def is_paused() -> bool:
     return await mopidy.playback.get_state() != 'play'
+
+async def main_plain(host, port, message_handler:callable):
+    global mopidy,call_message_handler
+
+    call_message_handler = message_handler
+    mopidy = MopidyClient(host=host, port=port, parse_results=True)
+    await mopidy.connect()
+
+    mopidy.bind('track_playback_started', track_started_handler)
+    mopidy.bind('track_playback_paused', track_paused_handler)
+    mopidy.bind('track_playback_resumed', track_resumed_handler)
+    mopidy.bind('track_playback_ended', track_ended_handler)
+    mopidy.bind('volume_changed', volume_changed_handler)
+    mopidy.bind('playback_state_changed', playback_state_changed_handler)
+    mopidy.bind('tracklist_changed', tracklist_changed_handler)
+
+    # capture everything else just to build out the model
+    mopidy.bind('*', all_events_handler)
+
+    # Set the controls the way we want
+    await mopidy.tracklist.set_consume(True)
+    await mopidy.tracklist.set_random(False)
+    await mopidy.tracklist.set_repeat(False)
+
+    # Start playing? TODO: only do this if there is music in the queue. Maybe clear it first?
+    await mopidy.playback.play()
+
+    # We'll hang here and let asyncio do its thing
+    while True:
+        await asyncio.sleep(1)
+
+    await mopidy.disconnect()  # close connection implicit
