@@ -33,8 +33,6 @@ async def on_message(message):
         arguments = command_input.split(' ')[1:]
 
         if command:
-            import mpd_utils
-
             result : CommandResult = await command.run(message, arguments) 
 
             if result.return_message is not None:
@@ -44,12 +42,13 @@ async def on_message(message):
                 )
                 for embed in result.return_message.embeds:
                     msg = await message.channel.send(embed=embed)
-
             #TODO: this is crazy. make more structured
             if result.extras:
                 for key in result.extras:
                     if key != 'data' and result.extras[key]:
                         await globals()[key](msg, result.extras['data'], result.post_action)
+        else:
+            await message.channel.send(content=f'Ain\'t no command **{command_input}**. Use **{config.COMMAND_PREFIX}help** for a list')
 
 
 async def get_reactions(num, alphabet):
