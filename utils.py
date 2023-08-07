@@ -21,7 +21,7 @@ def get_song_embed(song:mopidy.models.Track, additional=None, title_prefix = '',
     embed = Embed(color=0xff0ff, title = f'{title_prefix}{song.name}',
                           description = desc_line)
 
-    if config.mopidy['show_art']:
+    if config.locals['mopidy']['show_art']:
         if uri_images is not None:
             image = uri_images[song.uri][0]
             if image:
@@ -33,11 +33,11 @@ def get_song_embed(song:mopidy.models.Track, additional=None, title_prefix = '',
     return embed
 
 def song_for_results(index:str, song:mopidy.models.Track) -> str:
-     markdown = (f'{index}: **{escape_markdown(song.name)}**'
+    markdown = (f'{index}: **{escape_markdown(song.name)}**'
                 f' by {escape_markdown(artists_to_string(song.artists))}' +
                 f' from {escape_markdown(song.album.name)}'
-                f'({timedelta(seconds=round(float(song.length)/1000))})')
-     
+                f'({timedelta(seconds=round(float(song.length)/1000))})\n')
+    return markdown    
 
 def get_results_embed(results, title: str='Search Results', empty: str='No results.'):
     alphabet = [chr(i) for i in range(constants.UPPER_A_VALUE, constants.UPPER_Z_VALUE)]

@@ -9,19 +9,19 @@ from config import Common as config
 from utils import get_results_embed, send_song_embed, get_song_embed, get_queue_embeds
 from mpd_utils import get_current_song, add_to_queue, images_for_uris
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class ReturnMessage:
     message: str = None
     embed: Embed = None
-    embeds: List[Embed] = None
+    embeds: List[Embed] = field(default_factory=list)
 
 @dataclass
 class CommandResult:
-    return_message : ReturnMessage
-    extras: dict
-    post_action : callable
+    return_message : ReturnMessage = None
+    extras: dict = None
+    post_action : callable = None
 
 commands = {}
 aliases = {}

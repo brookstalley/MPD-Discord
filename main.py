@@ -40,8 +40,10 @@ async def on_message(message):
                     content=result.return_message.message,
                     embed=result.return_message.embed
                 )
-                for embed in result.return_message.embeds:
-                    msg = await message.channel.send(embed=embed)
+                #TODO: figure out why the return_message.embeds defaults to None rather than []
+                if result.return_message.embeds is not None:
+                    for embed in result.return_message.embeds:
+                        msg = await message.channel.send(embed=embed)
             #TODO: this is crazy. make more structured
             if result.extras:
                 for key in result.extras:
