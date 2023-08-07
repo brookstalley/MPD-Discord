@@ -1,13 +1,27 @@
 import discord
 from command import Command
+from discord import Embed
 
-from typing import Union
+from typing import Union, List
 
 import mpd_utils
 from config import Common as config
 from utils import get_results_embed, send_song_embed, get_song_embed, get_queue_embeds
 from mpd_utils import get_current_song, add_to_queue, images_for_uris
 
+from dataclasses import dataclass
+
+@dataclass
+class ReturnMessage:
+    message: str = None
+    embed: Embed = None
+    embeds: List[Embed] = None
+
+@dataclass
+class CommandResult:
+    return_message : ReturnMessage
+    extras: dict
+    post_action : callable
 
 commands = {}
 aliases = {}
@@ -38,8 +52,9 @@ async def generate_help(*args):
         c = commands[command]
         embed.add_field(name=c.get_name(),
                         value=c.get_description() + "\n**Aliases:** " + ', '.join(a for a in c.get_aliases()) + "\n--")
-
-    return {'embed': embed}, None, None
+    result = CommandResult(ReturnMessage(embed = embed))
+    
+    return result
 
 async def get_playing(msg, args):
     song = await get_current_song()
@@ -48,43 +63,60 @@ async def get_playing(msg, args):
         return {'embed': embed}, None, None
 
     uri_images = await images_for_uris([song.uri])
-    return {'embed': get_song_embed(song,uri_images=uri_images)}, None, None
+    result = CommandResult(
+        ReturnMessage(embed = get_song_embed(song,uri_images=uri_images))
+        )
+    return result
 
 async def search(msg, query):
     results = await mpd_utils.perform_search(query)
 
-    return {'embed': get_results_embed(results)}, \
-           {'wait_for_reactions': True, 'data': results}, send_song_embed
+    result = CommandResult(
+        ReturnMessage(embed = get_results_embed(results)),
+        extras = {'wait_for_reactions': True, 'data': results},
+        post_action= send_song_embed)
+    return result
 
 async def add(msg, query):
     results = await mpd_utils.perform_search(query)
 
-    return {'embed': get_results_embed(results)}, \
-           {'wait_for_reactions': True, 'data': results}, add_to_queue
+    result = CommandResult(
+        ReturnMessage(embed = get_results_embed(results)),
+        extras = {'wait_for_reactions': True, 'data': results},
+        post_action = add_to_queue
+    )
+    return result
 
 async def queue(msg, args):
     results = await mpd_utils.get_queue()
     uri_images = await images_for_uris([song.uri for song in results])
     message, embeds = get_queue_embeds(results, title="Current Playlist", empty="Queue is empty", uri_images=uri_images)
-    return {'embeds': embeds, 'message': message}, None, None
+
+    result = CommandResult(
+        ReturnMessage(message = message, embeds=embeds)
+    )
+    return result
 
 async def pause(msg, args):
     await mpd_utils.pause_playback()
 
-    return None, None, None
+    return CommandResult()
 
 async def play(msg, args):
     await mpd_utils.start_playback()
 
-    return None, None, None
+    return CommandResult()
 
 async def next(msg, args):
     await mpd_utils.next_track()
     # get_playing shows skipped track, not newly playing track, so don't use this
     #return await get_playing(msg, args)
-    return None, None, None
+    return CommandResult()
 
 async def clear(msg, args):
     await mpd_utils.clear_queue()
 
-    return {'message' : "Cleared queue"}, None, None
+    result = CommandResult(
+        ReturnMessage(message = 'Cleared queue')
+    )
+    return result

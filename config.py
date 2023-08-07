@@ -19,8 +19,8 @@ class Common(object):
     }
 
     commands = {
-        "help": {
-            "aliases": ["assist", "commands"],
+        "generate_help": {
+            "aliases": ["help", "assist", "commands"],
             "description": "Lists commands, their aliases, and their function."
         },
         "get_playing": {

@@ -1,8 +1,12 @@
 from mopidy_asyncio_client import MopidyClient
 import logging, asyncio
+from asyncio import sleep
 from utils import get_song_embed, send_song_embed
 
 mopidy:MopidyClient = None
+
+# the callback we use to alert users to events that happen in Mopidy
+# it will be initialized after we're created, so must be checked before calling
 call_message_handler:callable = None
 
 logging.basicConfig()
@@ -75,11 +79,18 @@ async def main_plain(host, port, message_handler:callable):
     mopidy.bind('playback_state_changed', playback_state_changed_handler)
     mopidy.bind('tracklist_changed', tracklist_changed_handler)
 
+    # capture everything else just to build out the model
     mopidy.bind('*', all_events_handler)
+
+    # Set the controls the way we want
     await mopidy.tracklist.set_consume(True)
     await mopidy.tracklist.set_random(False)
     await mopidy.tracklist.set_repeat(False)
+
+    # Start playing? TODO: only do this if there is music in the queue. Maybe clear it first?
     await mopidy.playback.play()
+
+    # We'll hang here and let asyncio do its thing
     while True:
         await asyncio.sleep(1)
 
@@ -146,9 +157,9 @@ def generate_query(query):
 
 async def perform_search(query):
     mopidy_query = generate_query(query)
-    results = await mopidy.library.search(mopidy_query)
+    results = await mopidy.library.search(mopidy_query,)
 
-    SEARCH_RESULTS = 25  # TODO Include in query
+    SEARCH_RESULTS = 25 
     # Always the 0th result because we only submit one query at a time
     # TODO: support albums and artists
     results = results[0].tracks
@@ -163,19 +174,10 @@ async def add_to_queue(client, message, song=None, uri_images = None):
 
 async def images_for_uris(uris) -> dict:
     #support being called with a str
+    # TODO: a local cache layer
     if isinstance(uris, str):
         uris = [uris]
     return await mopidy.library.get_images(uris)
 
-#####################################
-### OLD STUFF BELOW
-#####################################
-'''
-def toggle_playback(pause: bool):
-    mpd_connection.pause(1 if pause else 0)
-
-def is_paused():
-    return mpd_connection.status()['state'] != 'play'
-
-
-'''
+async def is_paused() -> bool:
+    return await mopidy.playback.get_state() != 'play'

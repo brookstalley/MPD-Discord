@@ -4,7 +4,10 @@ import discord
 from mpd_utils import main_plain, images_for_uris
 
 from command import Command
-import commands as bot_commands
+
+# this is bad form but necessary becase we have a dynamic list of commands coming from config.py
+# TODO: something better
+from commands import *
 
 import constants
 from config import Common as config
@@ -26,30 +29,27 @@ async def on_ready():
 async def on_message(message):
     if message.content.startswith(config.COMMAND_PREFIX):
         command_input = message.content.split(config.COMMAND_PREFIX)[1]
-        command = bot_commands.get_command_by_name(command_input)
+        command = get_command_by_name(command_input)
         arguments = command_input.split(' ')[1:]
 
         if command:
             import mpd_utils
 
-            return_message, extras, post_action = await command.run(message, arguments)
+            result : CommandResult = await command.run(message, arguments) 
 
-            if return_message is not None:
+            if result.return_message is not None:
                 msg = await message.channel.send(
-                    content=return_message['message'] if 'message' in return_message else None,
-                    embed=return_message['embed'] if 'embed' in return_message else None
+                    content=result.return_message.message,
+                    embed=result.return_message.embed
                 )
+                for embed in result.return_message.embeds:
+                    msg = await message.channel.send(embed=embed)
 
-                if 'embeds' in return_message and return_message['embeds'] is not None:
-                    for embed in return_message['embeds']:
-                        msg = await message.channel.send(embed=embed)
-            if extras:
-                for key in extras:
-                    if key != 'data' and extras[key]:
-                        await globals()[key](msg, extras['data'], post_action)
-
-            # if not mpd_utils.streaming:
-            #     mpd_utils.close_mpd_connection()
+            #TODO: this is crazy. make more structured
+            if result.extras:
+                for key in result.extras:
+                    if key != 'data' and result.extras[key]:
+                        await globals()[key](msg, result.extras['data'], result.post_action)
 
 
 async def get_reactions(num, alphabet):
@@ -146,13 +146,9 @@ async def main_loop():
     mopidy_password:str = config.mopidy['password']
 
     for command in config.commands:
+        func = globals()[command]
 
-        if command != 'help':
-            func = getattr(bot_commands, command)
-        else:
-            func = bot_commands.generate_help
-
-        bot_commands.register_command(Command(command, config.commands[command]['aliases'], config.commands[command]['description'], func = func))
+        register_command(Command(command, config.commands[command]['aliases'], config.commands[command]['description'], func = func))
 
     async with client:
         client.loop.create_task(main_plain(mopidy_host, mopidy_port, message_handler=send_update))
