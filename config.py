@@ -5,18 +5,6 @@ class Common(object):
     
     COMMAND_PREFIX = "!"
     DISCORD_CHANNEL = "music-control"
-    mopidy = {
-        "server": "santacruz.illuminati.org",
-        "port": 6680,
-        "password": "FRNKdiscodonFRNK",
-        "timeout": 10,
-        "fifo": "",
-        "show_art": True,
-    }
-    download_servers = {
-        "art_url": "",
-        "music_url": ""
-    }
 
     commands = {
         "generate_help": {

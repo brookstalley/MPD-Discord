@@ -140,9 +140,9 @@ async def send_update(message):
         message_id = await channel.send(content=message)    
 
 async def main_loop():
-    mopidy_host:str = config.mopidy['server']
-    mopidy_port:str = config.mopidy['port']
-    mopidy_password:str = config.mopidy['password']
+    mopidy_host:str = config.locals['mopidy']['server']
+    mopidy_port:str = config.locals['mopidy']['port']
+    mopidy_password:str = config.locals['mopidy']['password']
 
     for command in config.commands:
         func = globals()[command]
