@@ -20,9 +20,13 @@ class Common(object):
             "description": "Searches the database for a song."
         },
         "add": {
-            "aliases": ["queue", "search_add", "add_one"],
-            "description": "Searches the database for a song and adds it to the queue."
+            "aliases": ["queue", "search_add"],
+            "description": "Searches the database for a song and presents list to choose."
         },
+        "add_one": {
+            "aliases": ["addf", "addfirst", "addone"],
+            "description": "Searches the database for a song and adds top match to queue"
+        },       
         "queue": {
             "aliases": ["current_playlist", "cp"],
             "description": "Displays the songs in the current queue."

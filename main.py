@@ -26,7 +26,7 @@ async def on_ready():
     print('------')
 
 @client.event
-async def on_message(message):
+async def on_message(message:discord.message.Message):
     if message.content.startswith(config.COMMAND_PREFIX):
         command_input = message.content.split(config.COMMAND_PREFIX)[1]
         command = get_command_by_name(command_input)
@@ -76,7 +76,7 @@ class SongSelect(discord.ui.Select):
         await interaction.message.delete()
         song = self._songs[int(self.values[0])]
         uri_images = await images_for_uris([song.uri])
-        await self._post_action(client, interaction.message, song, uri_images)
+        await self._post_action(interaction.message, song, uri_images)
         await self._message.delete()
 
 class SongView(discord.ui.View):
@@ -95,40 +95,6 @@ async def wait_for_reactions(message:discord.message.Message, data, post_action)
 
     await message.channel.send(view=view)
     return
-
-    async for letter in get_reactions(len(data), emoji_alphabet):
-        await message.add_reaction(chr(letter))
-
-
-    valid = False
-    while not valid:
-        #res = await client.wait_for_reaction(message=message)
-        def _cr(reaction, user):
-            return reaction.message.id == message.id
-        tres = await client.wait_for('reaction_add', check=_cr)
-        res = tres[0]
-        user = tres[1]
-        print(f"got reaction: {tres}")
-        if user != message.author:
-            react_emoji = res.emoji
-            emoji_value = ord(react_emoji)
-
-            if emoji_value in emoji_alphabet:
-                try:
-                    song = data[emoji_alphabet.index(emoji_value)]
-                    await message.delete()
-
-                    import utils
-
-                    await post_action(client, message, song)
-                    # await client.send_message(message.channel, embed=utils.send_song_embed(song))
-
-                    valid = True
-                except ValueError:
-                    await message.remove_reaction(react_emoji, user)
-            else:
-                await message.remove_reaction(react_emoji, user)
-
 
 async def send_update(message):
     print(client.status)

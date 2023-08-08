@@ -136,9 +136,9 @@ async def perform_search(query):
 
     return results
 
-async def add_to_queue(client, message, song=None, uri_images = None):
+async def add_to_queue(message, song=None, uri_images = None):
     await mopidy.tracklist.add(uris=[song.uri])
-    await send_song_embed(client, message, song, additional='Added to queue.', uri_images=uri_images)
+    await send_song_embed(message, song, additional='Added to queue.', uri_images=uri_images)
 
 async def images_for_uris(uris) -> dict:
     #support being called with a str

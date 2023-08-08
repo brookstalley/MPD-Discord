@@ -44,7 +44,7 @@ def get_command_by_name(name: str) -> Union[Command, None]:
     else:
         return None        
 
-async def generate_help(*args):
+async def generate_help(*args) -> CommandResult:
     embed = discord.Embed(color=0xff000a, title='Help',
                           description='')
 
@@ -56,7 +56,7 @@ async def generate_help(*args):
     
     return result
 
-async def get_playing(msg, args):
+async def get_playing(msg, args) -> CommandResult:
     song = await get_current_song()
     if song is None:
         embed = discord.Embed(title="Nothing playing.", color=0xff4444)
@@ -68,7 +68,7 @@ async def get_playing(msg, args):
         )
     return result
 
-async def search(msg, query):
+async def search(msg, query) -> CommandResult:
     results = await mpd_utils.perform_search(query)
 
     result = CommandResult(
@@ -77,7 +77,7 @@ async def search(msg, query):
         post_action= send_song_embed)
     return result
 
-async def add(msg, query):
+async def add(msg, query) -> CommandResult:
     results = await mpd_utils.perform_search(query)
 
     result = CommandResult(
@@ -87,7 +87,24 @@ async def add(msg, query):
     )
     return result
 
-async def queue(msg, args):
+async def add_one(msg:discord.message.Message, query) -> CommandResult:
+    results = await mpd_utils.perform_search(query)
+
+    if len(results) == 0:
+        return CommandResult(ReturnMessage(message = 'No results found.'))
+    
+    song = results[0]
+
+    await add_to_queue(msg, song=song, uri_images = None)
+
+    result = CommandResult(
+        ReturnMessage(embed = get_results_embed(results)),
+        extras = {'wait_for_reactions': True, 'data': results},
+        post_action = add_to_queue
+    )
+    return result
+
+async def queue(msg, args) -> CommandResult:
     results = await mpd_utils.get_queue()
     uri_images = await images_for_uris([song.uri for song in results])
     message, embeds = get_queue_embeds(results, title="Current Playlist", empty="Queue is empty", uri_images=uri_images)
@@ -97,23 +114,23 @@ async def queue(msg, args):
     )
     return result
 
-async def pause(msg, args):
+async def pause(msg, args) -> CommandResult:
     await mpd_utils.pause_playback()
 
     return CommandResult()
 
-async def play(msg, args):
+async def play(msg, args) -> CommandResult:
     await mpd_utils.start_playback()
 
     return CommandResult()
 
-async def next(msg, args):
+async def next(msg, args) -> CommandResult:
     await mpd_utils.next_track()
     # get_playing shows skipped track, not newly playing track, so don't use this
     #return await get_playing(msg, args)
     return CommandResult()
 
-async def clear(msg, args):
+async def clear(msg, args) -> CommandResult:
     await mpd_utils.clear_queue()
 
     result = CommandResult(
