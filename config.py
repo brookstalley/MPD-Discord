@@ -1,8 +1,9 @@
 import json
 
+
 class Common(object):
     locals = json.load(open('config-local.json', 'r'))
-    
+
     COMMAND_PREFIX = "!"
     DISCORD_CHANNEL = "music-control"
 
@@ -26,7 +27,7 @@ class Common(object):
         "add_one": {
             "aliases": ["addf", "addfirst", "addone"],
             "description": "Searches the database for a song and adds top match to queue"
-        },       
+        },
         "queue": {
             "aliases": ["current_playlist", "cp"],
             "description": "Displays the songs in the current queue."
@@ -48,4 +49,3 @@ class Common(object):
             "description": "Clears the current queue."
         },
     }
-

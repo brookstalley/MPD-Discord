@@ -1,7 +1,7 @@
 class Command:
     # _function: Callable[Any, dict]
 
-    def __init__(self, name: str, command_aliases: list, description: str, func:callable):
+    def __init__(self, name: str, command_aliases: list, description: str, func: callable):
         self._name = name
         self._aliases = command_aliases
         self._description = description
